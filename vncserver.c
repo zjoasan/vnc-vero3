@@ -197,7 +197,7 @@ void initVncServer(int argc, char **argv) {
 	
 	assert(vncscr != NULL);
 	
-	vncscr->desktopName = "OSMC";
+	vncscr->desktopName = "OSMC Vero 4K";
 	vncscr->frameBuffer =(char *)vncbuf;
 	vncscr->port = VNC_PORT;
 	vncscr->kbdAddEvent = dokey;
