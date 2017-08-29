@@ -349,6 +349,8 @@ int main(int argc, char **argv) {
 		
 		if (vncscr->clientHead != NULL)
 			update_screen();
+		else
+			usleep(usec/2);
 	}
 	
 	close_app();
