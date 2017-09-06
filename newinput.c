@@ -32,7 +32,7 @@ typedef enum {false,true} bool;
 int ufile;
 int relative_mode = 0;
 bool down_keys[KEY_CNT];
-
+int redraw = 0;
 //bool down_keys[KEY_CNT];
 
 
@@ -199,6 +199,7 @@ void dokey(rfbBool down,rfbKeySym key,rfbClientPtr cl) {
 		event.code = SYN_REPORT; //not sure what this is for? i'm guessing its some kind of sync thing?
 		event.value = 0;
 		write(ufile, &event, sizeof(event));
+		redraw = 1;
 	} else {
 		memset(&event, 0, sizeof(event));
 		gettimeofday(&event.time, NULL);
@@ -212,6 +213,8 @@ void dokey(rfbBool down,rfbKeySym key,rfbClientPtr cl) {
 		event.code = SYN_REPORT; //not sure what this is for? i'm guessing its some kind of sync thing?
 		event.value = 0;
 		write(ufile, &event, sizeof(event));
+		redraw = 1;
 	}
+	
 }
 

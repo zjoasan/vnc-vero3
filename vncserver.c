@@ -21,7 +21,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "common.h"
 #include "framebuffer.h"
-
+#include <unistd.h>
 #include "common.h"
 #include "newinput.h"
 
@@ -29,11 +29,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <rfb/keysym.h>
 
 #include <time.h>
+#include <unistd.h>
 
 #define CONCAT2(a,b) a##b
 #define CONCAT2E(a,b) CONCAT2(a,b)
 #define CONCAT3(a,b,c) a##b##c
 #define CONCAT3E(a,b,c) CONCAT3(a,b,c)
+#define PICTURE_TIMEOUT (1.0/25.0)
 
 char VNC_PASSWORD[256] = "";
 int VNC_PORT = 5900;
@@ -45,12 +47,12 @@ static rfbScreenInfoPtr vncscr;
 
 int ufile;
 int mouse_last = 0;
-
 int relative_mode;
-int last_x;
-int last_y;
-
-
+int last_x = 0;
+int last_y = 0;
+int new_x;
+int new_y;
+int redraw;
 uint32_t idle = 1;
 uint32_t standby = 1;
 
@@ -86,103 +88,106 @@ void doptr(int buttonMask, int x, int y, rfbClientPtr cl){
 
 //	printf("mouse: 0x%x at %d,%d\n", buttonMask, x,y);
 
-
-	memset(&event, 0, sizeof(event));
-	gettimeofday(&event.time, NULL);
-	if (relative_mode) {
-		event.type = EV_REL;
-		event.code = REL_X;
-		event.value = x - last_x;
-	}
-	else {
-		event.type = EV_ABS;
-		event.code = ABS_X;
-		event.value = x*2;
-	}
-	write(ufile, &event, sizeof(event));
-
-	memset(&event, 0, sizeof(event));
-	gettimeofday(&event.time, NULL);
-	if (relative_mode) {
-		event.type = EV_REL;
-		event.code = REL_Y;
-		event.value = y - last_y;
-	}
-	else {
-		event.type = EV_ABS;
-		event.code = ABS_Y;
-		event.value = y*2;
-	}
-	write(ufile, &event, sizeof(event));
-
-	last_x = x;
-	last_y = y;
-
-	memset(&event, 0, sizeof(event));
-	gettimeofday(&event.time, NULL);
-	event.type = EV_SYN;
-	event.code = SYN_REPORT; 
-	event.value = 0;
-	write(ufile, &event, sizeof(event));
-	if (mouse_last != buttonMask) {
-		int left_l = mouse_last & 0x1;
-		int left_w = buttonMask & 0x1;
-
-		if (left_l != left_w) {
-			memset(&event, 0, sizeof(event));
-			gettimeofday(&event.time, NULL);
-			event.type = EV_KEY;
-			event.code = BTN_LEFT;
-			event.value = left_w;
-			write(ufile, &event, sizeof(event));
-
-			memset(&event, 0, sizeof(event));
-			gettimeofday(&event.time, NULL);
-			event.type = EV_SYN;
-			event.code = SYN_REPORT; 
-			event.value = 0;
-			write(ufile, &event, sizeof(event));
+	if ((x > (last_x+30)) ||  (x < (last_x-30)) || (y > (last_y+30)) || (y < (last_y-30))) {
+		new_x=x*2;
+		new_y=y*2;
+		redraw = 1;
+		memset(&event, 0, sizeof(event));
+		gettimeofday(&event.time, NULL);
+		if (relative_mode) {
+			event.type = EV_REL;
+			event.code = REL_X;
+			event.value = new_x - last_x;
 		}
-
-		int middle_l = mouse_last & 0x2;
-		int middle_w = buttonMask & 0x2;
-
-		if (middle_l != middle_w) {
-			memset(&event, 0, sizeof(event));
-			gettimeofday(&event.time, NULL);
-			event.type = EV_KEY;
-			event.code = BTN_MIDDLE;
-			event.value = middle_w >> 1;
-			write(ufile, &event, sizeof(event));
-
-			memset(&event, 0, sizeof(event));
-			gettimeofday(&event.time, NULL);
-			event.type = EV_SYN;
-			event.code = SYN_REPORT; 
-			event.value = 0;
-			write(ufile, &event, sizeof(event));
+		else {
+			event.type = EV_ABS;
+			event.code = ABS_X;
+			event.value = new_x;
 		}
-		int right_l = mouse_last & 0x4;
-		int right_w = buttonMask & 0x4;
+		write(ufile, &event, sizeof(event));
 
-		if (right_l != right_w) {
-			memset(&event, 0, sizeof(event));
-			gettimeofday(&event.time, NULL);
-			event.type = EV_KEY;
-			event.code = BTN_RIGHT;
-			event.value = right_w >> 2;
-			write(ufile, &event, sizeof(event));
-
-			memset(&event, 0, sizeof(event));
-			gettimeofday(&event.time, NULL);
-			event.type = EV_SYN;
-			event.code = SYN_REPORT; 
-			event.value = 0;
-			write(ufile, &event, sizeof(event));
+		memset(&event, 0, sizeof(event));
+		gettimeofday(&event.time, NULL);
+		if (relative_mode) {
+			event.type = EV_REL;
+			event.code = REL_Y;
+			event.value = new_y - last_y;
 		}
+		else {
+			event.type = EV_ABS;
+			event.code = ABS_Y;
+			event.value = new_y;
+		}
+		write(ufile, &event, sizeof(event));
 
-		mouse_last = buttonMask;
-	}	
+		last_x = new_x;
+		last_y = new_y;
+
+		memset(&event, 0, sizeof(event));
+		gettimeofday(&event.time, NULL);
+		event.type = EV_SYN;
+		event.code = SYN_REPORT; 
+		event.value = 0;
+		write(ufile, &event, sizeof(event));
+		if (mouse_last != buttonMask) {
+			int left_l = mouse_last & 0x1;
+			int left_w = buttonMask & 0x1;
+
+			if (left_l != left_w) {
+				memset(&event, 0, sizeof(event));
+				gettimeofday(&event.time, NULL);
+				event.type = EV_KEY;
+				event.code = BTN_LEFT;
+				event.value = left_w;
+				write(ufile, &event, sizeof(event));
+
+				memset(&event, 0, sizeof(event));
+				gettimeofday(&event.time, NULL);
+				event.type = EV_SYN;
+				event.code = SYN_REPORT; 
+				event.value = 0;
+				write(ufile, &event, sizeof(event));
+			}
+
+			int middle_l = mouse_last & 0x2;
+			int middle_w = buttonMask & 0x2;
+
+			if (middle_l != middle_w) {
+				memset(&event, 0, sizeof(event));
+				gettimeofday(&event.time, NULL);
+				event.type = EV_KEY;
+				event.code = BTN_MIDDLE;
+				event.value = middle_w >> 1;
+				write(ufile, &event, sizeof(event));
+
+				memset(&event, 0, sizeof(event));
+				gettimeofday(&event.time, NULL);
+				event.type = EV_SYN;
+				event.code = SYN_REPORT; 
+				event.value = 0;
+				write(ufile, &event, sizeof(event));
+			}
+			int right_l = mouse_last & 0x4;
+			int right_w = buttonMask & 0x4;
+
+			if (right_l != right_w) {
+				memset(&event, 0, sizeof(event));
+				gettimeofday(&event.time, NULL);
+				event.type = EV_KEY;
+				event.code = BTN_RIGHT;
+				event.value = right_w >> 2;
+				write(ufile, &event, sizeof(event));
+
+				memset(&event, 0, sizeof(event));
+				gettimeofday(&event.time, NULL);
+				event.type = EV_SYN;
+				event.code = SYN_REPORT; 
+				event.value = 0;
+				write(ufile, &event, sizeof(event));
+			}
+			mouse_last = buttonMask;
+		}	
+	}
 }
 
 
@@ -222,7 +227,6 @@ void initVncServer(int argc, char **argv) {
 	
 	vncscr->serverFormat.trueColour = TRUE;
 	vncscr->serverFormat.bitsPerPixel = screenformat.bitsPerPixel;
-	
 	vncscr->alwaysShared = TRUE;
 	
 	rfbInitServer(vncscr);
@@ -343,13 +347,16 @@ int main(int argc, char **argv) {
 		usec = (vncscr->deferUpdateTime + standby) * 1000;
 		rfbProcessEvents(vncscr, usec);
 		if (idle)
-			standby = 100;
+			standby = 200;
 		else
 			standby = 10;
 		
-		if (vncscr->clientHead != NULL)
-			update_screen();
+		if (vncscr->clientHead != NULL){
+			if (redraw != 0){
+				update_screen(); 
+				redraw = 0;
+			}
+		}
 	}
-	
 	close_app();
 }
