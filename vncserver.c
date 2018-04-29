@@ -55,6 +55,7 @@ int new_y;
 int redraw;
 uint32_t idle = 1;
 uint32_t standby = 1;
+int timerredraw = 0;
 
 //reverse connection
 char *rhost = NULL;
@@ -344,17 +345,25 @@ int main(int argc, char **argv) {
 	
 	
 	while (1) {
-		usec = (vncscr->deferUpdateTime + standby) * 1000;
+		usec = (vncscr->deferUpdateTime + standby) * 500;
 		rfbProcessEvents(vncscr, usec);
 		if (idle)
-			standby = 200;
+			standby = 100;
 		else
-			standby = 10;
-		
+			standby = 50;
 		if (vncscr->clientHead != NULL){
 			if (redraw != 0){
 				update_screen(); 
 				redraw = 0;
+			}
+			else {
+				if ((timerredraw = 10)){
+					update_screen();
+					timerredraw = 0;
+				}
+				else {
+					timerredraw = timerredraw +1;
+				}
 			}
 		}
 	}
