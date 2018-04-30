@@ -357,7 +357,7 @@ int main(int argc, char **argv) {
 				redraw = 0;
 			}
 			else {
-				if ((timerredraw = 10)){
+				if ((timerredraw = 15)){
 					update_screen();
 					timerredraw = 0;
 				}
