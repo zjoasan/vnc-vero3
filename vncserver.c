@@ -360,6 +360,7 @@ int main(int argc, char **argv) {
 				if ((timerredraw = 15)){
 					update_screen();
 					timerredraw = 0;
+					redraw = 0;
 				}
 				else {
 					timerredraw = timerredraw +1;
