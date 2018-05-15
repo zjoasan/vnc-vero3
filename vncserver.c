@@ -87,7 +87,7 @@ rfbNewClientHookPtr clientHook(rfbClientPtr cl) {
 void doptr(int buttonMask, int x, int y, rfbClientPtr cl){
 	struct input_event       event;
 
-	printf("mouse: 0x%x at %d,%d\n", buttonMask, x,y);
+//	printf("mouse: 0x%x at %d,%d\n", buttonMask, x,y);
 
 	if ((x > (last_x+30)) ||  (x < (last_x-30)) || (y > (last_y+30)) || (y < (last_y-30))) {
 		new_x=x*2;
@@ -317,8 +317,6 @@ int main(int argc, char **argv) {
 	
 	L("Initializing virtual keyboard...\n");
 	initUinput();
-	L("Initializing virtual mouse...\n");
-	initUinput(1);
 	
 	L("Initializing VNC server:\n");
 	L("	width:  %d\n", (int)screenformat.width);
@@ -359,10 +357,9 @@ int main(int argc, char **argv) {
 				redraw = 0;
 			}
 			else {
-				if ((timerredraw = 15)){
+				if ((timerredraw = 10)){
 					update_screen();
 					timerredraw = 0;
-					redraw = 0;
 				}
 				else {
 					timerredraw = timerredraw +1;

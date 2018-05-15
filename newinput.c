@@ -36,7 +36,7 @@ int redraw = 0;
 //bool down_keys[KEY_CNT];
 
 
-void initUinput(int width) {
+void initUinput() {
 	struct uinput_user_dev	uinp;
 	int retcode, i;
 	memset(down_keys, 0, sizeof(down_keys));
@@ -47,12 +47,9 @@ void initUinput(int width) {
 		exit(-1);
 	}
 	memset(&uinp, 0, sizeof(uinp));
-//	strncpy(uinp.name, "VNCServer SimKey", 20);
-//	uinp.id.version = 4;
-//	uinp.id.bustype = BUS_USB;
-//	uinp.id.vendor  = 0x1234;
-//	uinp.id.product = 0x5678;
-//	uinp.id.version = 1;
+	strncpy(uinp.name, "VNCServer SimKey", 20);
+	uinp.id.version = 4;
+	uinp.id.bustype = BUS_USB;
 	if (!relative_mode) {
 		uinp.absmin[ABS_X] = 0;
 		uinp.absmax[ABS_X] = screenformat.width*2;
@@ -60,43 +57,26 @@ void initUinput(int width) {
 		uinp.absmax[ABS_Y] = screenformat.height*2;
 	}
 
-	if(width){
-  	     	uinp.id.version = 1;
-		uinp.id.bustype = BUS_USB;
-        	uinp.id.vendor  = 0x1234;
-        	uinp.id.product = 0x5678;
+	ioctl(ufile, UI_SET_EVBIT, EV_KEY);
+	for (i=0; i<KEY_MAX; i++) { //I believe this is to tell UINPUT what keys we can make?
+		ioctl(ufile, UI_SET_KEYBIT, i);
+	}
 
+	ioctl(ufile, UI_SET_KEYBIT, BTN_LEFT);
+	ioctl(ufile, UI_SET_KEYBIT, BTN_RIGHT);
+	ioctl(ufile, UI_SET_KEYBIT, BTN_MIDDLE);
 
-		strncpy(uinp.name, "VNCServer Mouse", 20);
-		ioctl(ufile, UI_SET_KEYBIT, BTN_LEFT);
-		ioctl(ufile, UI_SET_KEYBIT, BTN_RIGHT);
-		ioctl(ufile, UI_SET_KEYBIT, BTN_MIDDLE);
-
-		if (relative_mode) {
-			ioctl(ufile, UI_SET_EVBIT, EV_REL);
-			ioctl(ufile, UI_SET_RELBIT, REL_X);
-			ioctl(ufile, UI_SET_RELBIT, REL_Y);
-		}
-		else {
-			ioctl(ufile, UI_SET_EVBIT, EV_ABS);
-			ioctl(ufile, UI_SET_ABSBIT, ABS_X);
-			ioctl(ufile, UI_SET_ABSBIT, ABS_Y);
-		}
+	if (relative_mode) {
+		ioctl(ufile, UI_SET_EVBIT, EV_REL);
+		ioctl(ufile, UI_SET_RELBIT, REL_X);
+		ioctl(ufile, UI_SET_RELBIT, REL_Y);
 	}
 	else {
-		strncpy(uinp.name, "VNCServer Keyboard", 20);
-                uinp.id.version = 4;
-                uinp.id.bustype = BUS_USB;
-                uinp.id.vendor  = 0x4321;
-                uinp.id.product = 0x8765;
-
-        	ioctl(ufile, UI_SET_EVBIT, EV_KEY);
-        	ioctl(ufile, UI_SET_EVBIT, EV_REP);
-		ioctl(ufile, UI_SET_EVBIT, EV_SYN);
-		for (i=0; i<KEY_MAX; i++) { //I believe this is to tell UINPUT what key$
-                	ioctl(ufile, UI_SET_KEYBIT, i);
-        	}
+		ioctl(ufile, UI_SET_EVBIT, EV_ABS);
+		ioctl(ufile, UI_SET_ABSBIT, ABS_X);
+		ioctl(ufile, UI_SET_ABSBIT, ABS_Y);
 	}
+
 	retcode = write(ufile, &uinp, sizeof(uinp));
 	printf("First write returned %d.\n", retcode);
 	retcode = (ioctl(ufile, UI_DEV_CREATE));
@@ -113,7 +93,7 @@ void closeUinput() {
 }
 
 int keysym2scancode(rfbKeySym key) {
-	printf("keysym: %04X\n", key);
+	//printf("keysym: %04X\n", key);
 	int scancode = 0;
 	int code = (int) key;
 	if (code>='0' && code<='9') {
