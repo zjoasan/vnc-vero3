@@ -28,18 +28,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #define KEY_CENTER KEY_UNKNOWN
 #define KEY_SHARP KEY_UNKNOWN
 #define KEY_STAR KEY_UNKNOWN
-typedef enum {false,true} bool;
-int ufile;
-int relative_mode = 0;
-bool down_keys[KEY_CNT];
-int redraw = 0;
-//bool down_keys[KEY_CNT];
 
+int ufile;
 
 void initUinput() {
 	struct uinput_user_dev	uinp;
 	int retcode, i;
-	memset(down_keys, 0, sizeof(down_keys));
 	ufile = open("/dev/uinput", O_WRONLY | O_NDELAY );
 	printf("open /dev/uinput returned %d.\n", ufile);
 	if (ufile == 0) {
@@ -50,33 +44,10 @@ void initUinput() {
 	strncpy(uinp.name, "VNCServer SimKey", 20);
 	uinp.id.version = 4;
 	uinp.id.bustype = BUS_USB;
-	if (!relative_mode) {
-		uinp.absmin[ABS_X] = 0;
-		uinp.absmax[ABS_X] = screenformat.width*2;
-		uinp.absmin[ABS_Y] = 0;
-		uinp.absmax[ABS_Y] = screenformat.height*2;
-	}
-
 	ioctl(ufile, UI_SET_EVBIT, EV_KEY);
 	for (i=0; i<KEY_MAX; i++) { //I believe this is to tell UINPUT what keys we can make?
 		ioctl(ufile, UI_SET_KEYBIT, i);
 	}
-
-	ioctl(ufile, UI_SET_KEYBIT, BTN_LEFT);
-	ioctl(ufile, UI_SET_KEYBIT, BTN_RIGHT);
-	ioctl(ufile, UI_SET_KEYBIT, BTN_MIDDLE);
-
-	if (relative_mode) {
-		ioctl(ufile, UI_SET_EVBIT, EV_REL);
-		ioctl(ufile, UI_SET_RELBIT, REL_X);
-		ioctl(ufile, UI_SET_RELBIT, REL_Y);
-	}
-	else {
-		ioctl(ufile, UI_SET_EVBIT, EV_ABS);
-		ioctl(ufile, UI_SET_ABSBIT, ABS_X);
-		ioctl(ufile, UI_SET_ABSBIT, ABS_Y);
-	}
-
 	retcode = write(ufile, &uinp, sizeof(uinp));
 	printf("First write returned %d.\n", retcode);
 	retcode = (ioctl(ufile, UI_DEV_CREATE));
@@ -91,7 +62,6 @@ void closeUinput() {
 	ioctl(ufile, UI_DEV_DESTROY);
 	close(ufile);
 }
-
 int keysym2scancode(rfbKeySym key) {
 	//printf("keysym: %04X\n", key);
 	int scancode = 0;
@@ -199,7 +169,6 @@ void dokey(rfbBool down,rfbKeySym key,rfbClientPtr cl) {
 		event.code = SYN_REPORT; //not sure what this is for? i'm guessing its some kind of sync thing?
 		event.value = 0;
 		write(ufile, &event, sizeof(event));
-		redraw = 1;
 	} else {
 		memset(&event, 0, sizeof(event));
 		gettimeofday(&event.time, NULL);
@@ -213,8 +182,5 @@ void dokey(rfbBool down,rfbKeySym key,rfbClientPtr cl) {
 		event.code = SYN_REPORT; //not sure what this is for? i'm guessing its some kind of sync thing?
 		event.value = 0;
 		write(ufile, &event, sizeof(event));
-		redraw = 1;
 	}
-	
 }
-
