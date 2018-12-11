@@ -13,7 +13,7 @@ void initUinput();
 void closeUinput();
 int keysym2scancode(rfbKeySym key);
 void dokey(rfbBool down,rfbKeySym key,rfbClientPtr cl);
-
+void doptr(int buttonMask, int x, int y, rfbClientPtr cl)
 #endif
 
 
