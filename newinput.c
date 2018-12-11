@@ -184,7 +184,8 @@ void dokey(rfbBool down,rfbKeySym key,rfbClientPtr cl) {
 		write(ufile, &event, sizeof(event));
 	}
 }
-static void doptr(int buttonMask, int x, int y, rfbClientPtr cl)
+// static
+void doptr(int buttonMask, int x, int y, rfbClientPtr cl)
 {
 	struct input_event       event;
 
