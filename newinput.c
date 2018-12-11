@@ -184,3 +184,107 @@ void dokey(rfbBool down,rfbKeySym key,rfbClientPtr cl) {
 		write(ufile, &event, sizeof(event));
 	}
 }
+static void doptr(int buttonMask, int x, int y, rfbClientPtr cl)
+{
+	struct input_event       event;
+
+	//printf("mouse: 0x%x at %d,%d\n", buttonMask, x,y);
+
+
+	memset(&event, 0, sizeof(event));
+	gettimeofday(&event.time, NULL);
+	if (relative_mode) {
+		event.type = EV_REL;
+		event.code = REL_X;
+		event.value = x - last_x;
+	}
+	else {
+		event.type = EV_ABS;
+		event.code = ABS_X;
+		event.value = x;
+	}
+	write(ufile, &event, sizeof(event));
+
+	memset(&event, 0, sizeof(event));
+	gettimeofday(&event.time, NULL);
+	if (relative_mode) {
+		event.type = EV_REL;
+		event.code = REL_Y;
+		event.value = y - last_y;
+	}
+	else {
+		event.type = EV_ABS;
+		event.code = ABS_Y;
+		event.value = y;
+	}
+	write(ufile, &event, sizeof(event));
+
+	last_x = x;
+	last_y = y;
+
+	memset(&event, 0, sizeof(event));
+	gettimeofday(&event.time, NULL);
+	event.type = EV_SYN;
+	event.code = SYN_REPORT; 
+	event.value = 0;
+	write(ufile, &event, sizeof(event));
+	if (mouse_last != buttonMask) {
+		int left_l = mouse_last & 0x1;
+		int left_w = buttonMask & 0x1;
+
+		if (left_l != left_w) {
+			memset(&event, 0, sizeof(event));
+			gettimeofday(&event.time, NULL);
+			event.type = EV_KEY;
+			event.code = BTN_LEFT;
+			event.value = left_w;
+			write(ufile, &event, sizeof(event));
+
+			memset(&event, 0, sizeof(event));
+			gettimeofday(&event.time, NULL);
+			event.type = EV_SYN;
+			event.code = SYN_REPORT; 
+			event.value = 0;
+			write(ufile, &event, sizeof(event));
+		}
+
+		int middle_l = mouse_last & 0x2;
+		int middle_w = buttonMask & 0x2;
+
+		if (middle_l != middle_w) {
+			memset(&event, 0, sizeof(event));
+			gettimeofday(&event.time, NULL);
+			event.type = EV_KEY;
+			event.code = BTN_MIDDLE;
+			event.value = middle_w >> 1;
+			write(ufile, &event, sizeof(event));
+
+			memset(&event, 0, sizeof(event));
+			gettimeofday(&event.time, NULL);
+			event.type = EV_SYN;
+			event.code = SYN_REPORT; 
+			event.value = 0;
+			write(ufile, &event, sizeof(event));
+		}
+		int right_l = mouse_last & 0x4;
+		int right_w = buttonMask & 0x4;
+
+		if (right_l != right_w) {
+			memset(&event, 0, sizeof(event));
+			gettimeofday(&event.time, NULL);
+			event.type = EV_KEY;
+			event.code = BTN_RIGHT;
+			event.value = right_w >> 2;
+			write(ufile, &event, sizeof(event));
+
+			memset(&event, 0, sizeof(event));
+			gettimeofday(&event.time, NULL);
+			event.type = EV_SYN;
+			event.code = SYN_REPORT; 
+			event.value = 0;
+			write(ufile, &event, sizeof(event));
+		}
+
+		mouse_last = buttonMask;
+	}	
+}
