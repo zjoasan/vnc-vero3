@@ -3,6 +3,7 @@ droid vnc server - Android VNC server
 Copyright (C) 2009 Jose Pereira <onaips@gmail.com>
 
 Modified for AML TV Boxes by kszaq <kszaquitto@gmail.com>
+modified by zjoasan too
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
