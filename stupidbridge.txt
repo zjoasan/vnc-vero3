@@ -1,0 +1,1 @@
+pausing stream when message been bridged, to see what happens
