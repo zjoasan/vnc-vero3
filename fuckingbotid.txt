@@ -1,1 +1,0 @@
-I bet it's the bot id that slack-server sends that filters all
