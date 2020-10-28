@@ -1,1 +1,0 @@
-Trying to see if i even get how it works, trying to use attachment in both mattermost and slack handler, one is green the orther red
