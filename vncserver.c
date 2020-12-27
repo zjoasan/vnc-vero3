@@ -89,7 +89,6 @@ void initVncServer(int argc, char **argv) {
 	vncscr->frameBuffer =(char *)vncbuf;
 	vncscr->port = VNC_PORT;
 	vncscr->kbdAddEvent = dokey;
-	vncscr->ptrAddEvent = doptr;
 	vncscr->newClientHook = (rfbNewClientHookPtr)clientHook;
 	
 	if (strcmp(VNC_PASSWORD, "") != 0) {
